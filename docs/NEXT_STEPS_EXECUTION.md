@@ -8,9 +8,10 @@
 5. 云端部署（cron/systemd + missed_run_recovery）
 
 ## 当前状态
-- 1、2、3、4 已落地（通过 webhook 推送与重试队列）
+- 1、2 已落地
+- 推送链路已切换为 OpenClaw Feishu 通道（App ID/App Secret）
 - 5 待迁移到云服务器时实施
 
-## 环境变量
-- `FEISHU_WEBHOOK_URL` 或 `FEISHU_BOT_WEBHOOK`
-- 未设置时：自动进入重试队列，不会中断流水线
+## 推送方式
+- 不再依赖 webhook 环境变量
+- 通过 OpenClaw 已连接的 Feishu 应用通道发送

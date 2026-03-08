@@ -20,17 +20,12 @@ Write-Host '[4/5] Updating advice history and dedup states...'
 Write-Host '[5/6] Generating daily report markdown...'
 .\.venv-tushare\Scripts\python scripts\generate_daily_report.py
 
-Write-Host '[6/8] Finalizing push state...'
+Write-Host '[6/6] Finalizing push state...'
 .\.venv-tushare\Scripts\python scripts\finalize_push_state.py
-
-Write-Host '[7/8] Pushing daily report to Feishu...'
-.\.venv-tushare\Scripts\python scripts\push_daily_to_feishu.py
-
-Write-Host '[8/8] Consuming retry queue...'
-.\.venv-tushare\Scripts\python scripts\consume_retry_queue.py
 
 Write-Host 'Done. Outputs:'
 Write-Host ' - outputs\daily_report.generated.md'
 Write-Host ' - outputs\portfolio_risk_report.json'
 Write-Host ' - outputs\advice_actions.json'
 Write-Host ' - state\push_job_state.json'
+Write-Host ' - push delivery: handled by OpenClaw Feishu channel (App ID/App Secret)'

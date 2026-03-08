@@ -15,15 +15,15 @@
 - ✅ 建议去重（24h 同结论同理由抑制）
 - ✅ 建议变更记录（`change_vs_last`）
 - ✅ 日报生成（5段结构）
-- ✅ 飞书自动推送（webhook）
-- ✅ 推送失败重试队列与补偿机制
+- ✅ 飞书自动推送（通过 OpenClaw Feishu 通道，App ID/App Secret）
+- ✅ 推送状态回写与漏跑补偿机制
 - ✅ 周度信号评估报告
 
 ---
 
 ## 2. 核心流程（当前主流水线）
 
-`run_daily_pipeline.ps1` 现为 8 步：
+`run_daily_pipeline.ps1` 现为 6 步：
 
 1. `build_market_snapshot_from_tushare.py`
 2. `build_signal_report_from_snapshot.py`
@@ -31,9 +31,8 @@
 4. `update_advice_history.py`
 5. `generate_daily_report.py`
 6. `finalize_push_state.py`
-7. `push_daily_to_feishu.py`
-8. `consume_retry_queue.py`
 
+日报推送由 OpenClaw 已连接的 Feishu 通道执行。
 ---
 
 ## 3. 项目结构（关键目录）
@@ -88,16 +87,9 @@
 setx TUSHARE_TOKEN "你的_tushare_token"
 ```
 
-### 飞书推送（二选一）
+### 飞书推送
 
-```powershell
-setx FEISHU_WEBHOOK_URL "你的飞书机器人webhook"
-# 或
-setx FEISHU_BOT_WEBHOOK "你的飞书机器人webhook"
-```
-
-> 未配置 webhook 时，系统不会中断，但会把任务放入 `retry_queue`。
-
+无需额外 webhook。使用 OpenClaw 已配置的 Feishu 应用凭证（App ID / App Secret）即可。
 ---
 
 ## 5. 运行方式
