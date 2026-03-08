@@ -9,6 +9,7 @@
 
 建议维护的结构化记忆字段：
 - `symbol -> last_action / last_date / reason / confidence / change_vs_last`
+- `symbol -> key_factor_snapshot`（趋势/动量/估值/财报质量摘要）
 - `global_risk_state`
 - `user_preference_version`
 - `push_status -> daily_last_success / weekly_last_success`

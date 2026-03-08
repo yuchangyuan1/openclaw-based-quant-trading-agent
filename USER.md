@@ -16,7 +16,7 @@
 默认输出强制字段：
 - 数据时间戳（data_ts）
 - 数据质量（quality_score / source_health）
-- 建议理由（why）
+- 建议理由（why，至少包含2个因子）
 - 风险说明（risk）
 - 置信度（confidence）
 - 与上次相比变化（change_vs_last）

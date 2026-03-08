@@ -19,7 +19,7 @@
 
 失败降级：
 - 任一步失败，输出“系统状态 + 风险提示”，不输出交易建议
-- 更新 `state/push_job_state.json` 并进入重试队列
+- 更新 `state/push_job_state.json`
 
 ## 每周六 10:00
 执行：
