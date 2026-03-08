@@ -22,11 +22,19 @@ def line_for_signal(item):
     )
 
 
+def pick_snapshot():
+    real_path = DATA / "market_snapshot.tushare.json"
+    sample_path = DATA / "market_snapshot.sample.json"
+    if real_path.exists():
+        return load_json(real_path), str(real_path.name)
+    return load_json(sample_path), str(sample_path.name)
+
+
 def main():
-    snapshot = load_json(DATA / "market_snapshot.sample.json")
+    snapshot, snapshot_source = pick_snapshot()
     report = load_json(DATA / "signal_report.sample.json")
 
-    ts = report.get("timestamp") or snapshot.get("timestamp") or datetime.now().isoformat()
+    ts = snapshot.get("timestamp") or report.get("timestamp") or datetime.now().isoformat()
     leaders = "、".join(snapshot.get("sector", {}).get("leaders", [])) or "暂无"
     laggards = "、".join(snapshot.get("sector", {}).get("laggards", [])) or "暂无"
 
@@ -35,8 +43,16 @@ def main():
     body.append(f"\n数据时间：{ts}\n")
 
     body.append("## 1. 市场概览")
+    body.append(f"- 数据源：{snapshot_source}")
     body.append(f"- 强势行业：{leaders}")
     body.append(f"- 弱势行业：{laggards}")
+
+    index_map = snapshot.get("index", {})
+    if index_map:
+        body.append("- 指数概览：")
+        for code, v in index_map.items():
+            if isinstance(v, dict) and "change_pct" in v:
+                body.append(f"  - {v.get('name', code)}({code})：{v.get('change_pct')}%")
 
     body.append("\n## 2. 重点信号")
     signals = report.get("signals", [])
