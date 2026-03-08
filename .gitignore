@@ -1,6 +1,4 @@
-.openclaw/*.log
-.openclaw/tmp/
-.openclaw/cache/
+.openclaw/
 
 # local secrets
 *.env
