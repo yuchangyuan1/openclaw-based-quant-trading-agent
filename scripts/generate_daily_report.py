@@ -53,7 +53,11 @@ def main():
     body.append(f"- 弱势行业：{laggards}")
     body.append(f"- 数据新鲜度(秒)：{snapshot.get('data_freshness_sec', 'NA')}")
     body.append(f"- 数据质量分：{snapshot.get('snapshot_quality_score', 'NA')}")
-    body.append(f"- 数据源健康：{snapshot.get('source_health', {})}")
+    sh = snapshot.get('source_health', {}) or {}
+    body.append("- 数据源健康：")
+    body.append(f"  - quote: {sh.get('quote', 'unknown')}")
+    body.append(f"  - news: {sh.get('news', 'unknown')}")
+    body.append(f"  - fundamental: {sh.get('fundamental', 'unknown')}")
 
     index_map = snapshot.get("index", {})
     if index_map:

@@ -69,7 +69,8 @@
 ├─ templates/
 │  ├─ feishu_daily.md
 │  ├─ feishu_weekly.md
-│  └─ feishu_alert.md
+│  ├─ feishu_alert.md
+│  └─ feishu_daily_card.json
 ├─ docs/
 │  ├─ IMPLEMENTATION_DRAFT_2026-03-08.md
 │  ├─ CONTEXT_ARCHIVE_2026-03-08.md
@@ -121,8 +122,9 @@ powershell -ExecutionPolicy Bypass -File scripts\run_daily_pipeline.ps1
 - `outputs/portfolio_risk_report.json`：组合约束检查结果
 - `outputs/advice_actions.json`：去重后的建议动作
 - `outputs/daily_report.generated.md`：日报内容
+- `outputs/feishu_card_payload.generated.json`：飞书卡片消息体（可直接发送）
 - `outputs/signal_eval_report.json`：周度评估
-- `state/push_job_state.json`：推送状态与重试队列
+- `state/push_job_state.json`：推送状态与补偿状态
 
 ---
 

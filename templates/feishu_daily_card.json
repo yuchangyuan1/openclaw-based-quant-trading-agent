@@ -1,0 +1,21 @@
+{
+  "msg_type": "interactive",
+  "card": {
+    "config": {"wide_screen_mode": true},
+    "header": {
+      "template": "blue",
+      "title": {"tag": "plain_text", "content": "{{title}}"}
+    },
+    "elements": [
+      {"tag": "markdown", "content": "**数据时间：** {{timestamp}}"},
+      {"tag": "hr"},
+      {"tag": "markdown", "content": "{{market_overview}}"},
+      {"tag": "hr"},
+      {"tag": "markdown", "content": "{{key_signals}}"},
+      {"tag": "hr"},
+      {"tag": "markdown", "content": "{{risk_alerts}}"},
+      {"tag": "hr"},
+      {"tag": "markdown", "content": "{{actions}}"}
+    ]
+  }
+}
