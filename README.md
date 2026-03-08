@@ -1,199 +1,169 @@
 # OpenClaw 低频量化交易咨询 Agent（A 股）
 
-这是一个基于 **OpenClaw** 的低频量化投研项目，用于把“市场数据抓取 → 信号生成 → 中文建议 → 日报输出”串成可复用流程。
+这是一个基于 **OpenClaw** 的低频量化投研项目，把“数据抓取 → 信号分析 → 风控约束 → 建议生成 → 飞书推送”串成可持续运行流程。
 
-> 定位：**投资决策支持系统**（recommendation only），不是自动交易系统。
-
----
-
-## 1. 项目功能概览
-
-本项目当前已实现：
-
-- ✅ 从 Tushare 拉取股票池与指数快照（`market_snapshot`）
-- ✅ 基于规则生成低频信号报告（`signal_report`）
-- ✅ 自动生成中文日报 Markdown
-- ✅ 关键策略参数配置化（无需改代码即可调参）
-- ✅ ClawHub 第三方 skills 隔离安装与审计记录
-
-核心工作流：
-
-```text
-config/*.yaml
-   ↓
-Tushare snapshot builder
-   ↓
-signal report builder
-   ↓
-daily report generator
-   ↓
-outputs/daily_report.generated.md
-```
+> 定位：**投资决策支持系统（recommendation only）**，不自动下单。
 
 ---
 
-## 2. 设计原则
+## 1. 当前能力（已落地）
 
-来自 `SOUL.md` / `IDENTITY.md`：
-
-- 可解释优先于复杂
-- 风险控制优先于收益冲动
-- 没有数据就不下结论
-- 没有显著变化就不重复打扰
-- 不直接执行交易、不承诺收益
+- ✅ Tushare 数据抓取（股票池 + 指数）
+- ✅ 数据质量闸门：`freshness/source_health/quality_score`
+- ✅ 信号生成（含 `evidence` 与 `data_quality_gate`）
+- ✅ 组合风险报告（单票/行业/回撤约束）
+- ✅ 建议去重（24h 同结论同理由抑制）
+- ✅ 建议变更记录（`change_vs_last`）
+- ✅ 日报生成（5段结构）
+- ✅ 飞书自动推送（webhook）
+- ✅ 推送失败重试队列与补偿机制
+- ✅ 周度信号评估报告
 
 ---
 
-## 3. 项目结构（当前）
+## 2. 核心流程（当前主流水线）
+
+`run_daily_pipeline.ps1` 现为 8 步：
+
+1. `build_market_snapshot_from_tushare.py`
+2. `build_signal_report_from_snapshot.py`
+3. `build_portfolio_risk_report.py`
+4. `update_advice_history.py`
+5. `generate_daily_report.py`
+6. `finalize_push_state.py`
+7. `push_daily_to_feishu.py`
+8. `consume_retry_queue.py`
+
+---
+
+## 3. 项目结构（关键目录）
 
 ```text
 .
 ├─ config/
-│  ├─ portfolio.yaml                # 市场/指数/股票池/仓位约束
-│  ├─ signal_rules.yaml             # 信号阈值、风险阈值、理由模板
-│  └─ notify_rules.yaml             # 推送与降噪规则
-├─ data/
-│  ├─ market_snapshot.tushare.json  # 实时拉取生成
-│  ├─ signal_report.generated.json  # 实时信号生成
-│  └─ *.sample.json                 # 样例数据
-├─ outputs/
-│  ├─ daily_report.generated.md     # 最终日报
-│  └─ feishu_payload.sample.json    # 飞书推送 dry-run 样例
+│  ├─ portfolio.yaml
+│  ├─ signal_rules.yaml
+│  └─ notify_rules.yaml
+├─ data/                              # 运行时数据（默认不入库）
+├─ outputs/                           # 运行产物（默认不入库）
+├─ state/
+│  ├─ push_job_state.json             # 推送状态（保留）
+│  └─ advice_history.jsonl            # 建议历史（默认不入库）
 ├─ schemas/
-│  └─ signal_report.schema.json     # 信号报告结构约束
+│  ├─ market_snapshot.schema.json
+│  ├─ signal_report.schema.json
+│  ├─ portfolio_risk_report.schema.json
+│  ├─ signal_eval_report.schema.json
+│  └─ advice_record.schema.json
 ├─ scripts/
 │  ├─ build_market_snapshot_from_tushare.py
 │  ├─ build_signal_report_from_snapshot.py
+│  ├─ build_portfolio_risk_report.py
+│  ├─ update_advice_history.py
+│  ├─ evaluate_signal_quality.py
 │  ├─ generate_daily_report.py
-│  └─ run_daily_pipeline.ps1        # 一键流水线入口
-├─ skills/
-│  ├─ README.md                     # skills 规划与检索结果
-│  ├─ tushare-finance/              # 已隔离安装（含审计）
-│  └─ akshare-finance/              # 已隔离安装（含审计）
-├─ examples/
-├─ AGENTS.md
-├─ HEARTBEAT.md
-├─ IDENTITY.md
-├─ SOUL.md
-├─ USER.md
+│  ├─ finalize_push_state.py
+│  ├─ push_daily_to_feishu.py
+│  ├─ consume_retry_queue.py
+│  ├─ missed_run_recovery.py
+│  └─ run_daily_pipeline.ps1
+├─ templates/
+│  ├─ feishu_daily.md
+│  ├─ feishu_weekly.md
+│  └─ feishu_alert.md
+├─ docs/
+│  ├─ IMPLEMENTATION_DRAFT_2026-03-08.md
+│  ├─ CONTEXT_ARCHIVE_2026-03-08.md
+│  └─ NEXT_STEPS_EXECUTION.md
 └─ README.md
 ```
 
 ---
 
-## 4. 快速开始
+## 4. 环境变量
 
-### 4.1 前置要求
-
-- Windows + PowerShell
-- Python 3.11+（当前环境可用）
-- OpenClaw 已配置
-- Tushare 账号与可用 Token
-
-### 4.2 配置 TUSHARE_TOKEN
-
-PowerShell：
+### 必需
 
 ```powershell
 setx TUSHARE_TOKEN "你的_tushare_token"
 ```
 
-> 重新打开终端后生效。当前会话临时生效可用：
-> `$env:TUSHARE_TOKEN="你的_tushare_token"`
-
-### 4.3 安装依赖（隔离环境）
-
-项目已使用 `.venv-tushare`。如需重装：
+### 飞书推送（二选一）
 
 ```powershell
-python -m venv .venv-tushare
-.\.venv-tushare\Scripts\python -m pip install -r skills\tushare-finance\requirements.txt
+setx FEISHU_WEBHOOK_URL "你的飞书机器人webhook"
+# 或
+setx FEISHU_BOT_WEBHOOK "你的飞书机器人webhook"
 ```
 
-### 4.4 一键运行日报流水线
+> 未配置 webhook 时，系统不会中断，但会把任务放入 `retry_queue`。
+
+---
+
+## 5. 运行方式
+
+### 日报流水线
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\run_daily_pipeline.ps1
 ```
 
-运行成功后查看：
+### 周度评估
 
-- `data/market_snapshot.tushare.json`
-- `data/signal_report.generated.json`
-- `outputs/daily_report.generated.md`
+```powershell
+.\.venv-tushare\Scripts\python scripts\evaluate_signal_quality.py
+```
 
----
+### 漏跑补偿检查（重启后）
 
-## 5. 如何调参（只改配置，不改代码）
-
-### 5.1 改股票池与指数
-
-编辑 `config/portfolio.yaml`：
-
-- `indexes`: 日报中的指数集合
-- `watchlist`: 信号生成覆盖的股票池
-- `portfolio_constraints`: 仓位/行业暴露/回撤约束
-
-### 5.2 改信号规则
-
-编辑 `config/signal_rules.yaml`：
-
-- `thresholds`: increase / hold / observe / reduce 划分
-- `risk_change_pct`: 低/中/高风险阈值
-- `model_params.default_confidence`: 默认置信度
-- `global_risk_thresholds`: normal/cautious/defensive 切换规则
-- `reason_templates`: 信号理由模板文案
+```powershell
+.\.venv-tushare\Scripts\python scripts\missed_run_recovery.py
+```
 
 ---
 
-## 6. 关键脚本说明
+## 6. 输出文件说明
 
-- `build_market_snapshot_from_tushare.py`
-  - 从 `portfolio.yaml` 读取市场、指数、股票池
-  - 拉取行情并生成 `market_snapshot.tushare.json`
-
-- `build_signal_report_from_snapshot.py`
-  - 读取 snapshot 与 `signal_rules.yaml`
-  - 生成 `signal_report.generated.json`
-
-- `generate_daily_report.py`
-  - 合并 snapshot + signal
-  - 输出中文结构化日报 markdown
-
-- `run_daily_pipeline.ps1`
-  - 串联以上三步，一键执行
+- `data/market_snapshot.tushare.json`：市场快照（含质量字段）
+- `data/signal_report.generated.json`：信号与风险结果
+- `outputs/portfolio_risk_report.json`：组合约束检查结果
+- `outputs/advice_actions.json`：去重后的建议动作
+- `outputs/daily_report.generated.md`：日报内容
+- `outputs/signal_eval_report.json`：周度评估
+- `state/push_job_state.json`：推送状态与重试队列
 
 ---
 
-## 7. 第三方 Skill 使用策略（安全）
+## 7. 配置与治理文件（已更新）
 
-本项目对第三方 skills 采用“先隔离、后验收”的策略：
+以下 OpenClaw 配置文件已对齐当前实现：
 
-- `skills/tushare-finance/ISOLATION_AUDIT.md`
-- `skills/akshare-finance/ISOLATION_AUDIT.md`
-
-原则：
-- 不直接把未知 skill 接入主流程
-- 先做静态检查、依赖隔离、最小联通测试
-- 再决定是否进入生产链路
+- `SOUL.md`
+- `AGENTS.md`
+- `USER.md`
+- `HEARTBEAT.md`
+- `MEMORY.md`
 
 ---
 
-## 8. 当前边界与后续计划
+## 8. 版本控制策略
 
-### 当前边界
-- 仅输出建议，不执行交易
-- 指数接口权限受 Tushare 账号权限影响（脚本已做降级处理）
-- 信号模型仍是可解释的简化规则版（适合先跑通）
+已加入 `.gitignore`：
 
-### 后续计划
-- [ ] 加入更多因子（波动、回撤、估值、财报质量）
-- [ ] 增加历史建议对比（delta_vs_last 真实化）
-- [ ] 接入飞书正式推送（当前已有 dry-run payload）
-- [ ] 周报自动复盘与参数迭代
+- 默认忽略运行产物：`data/*.json`, `outputs/*.json`, `outputs/*.md`, `state/*.jsonl`
+- 保留必要骨架：`state/push_job_state.json`
 
 ---
 
-## 9. 免责声明
+## 9. 后续计划
 
-本项目仅用于投研与决策辅助，不构成任何投资承诺或收益保证。投资有风险，决策需谨慎。
+- [ ] 云端常驻部署（cron/systemd）
+- [ ] 周报自动推送串联
+- [ ] 更真实的收益/回撤评估与置信度校准
+- [ ] source health 的多源路由与回退优化
+
+---
+
+## 10. 免责声明
+
+本项目仅用于投研与决策辅助，不构成投资建议或收益承诺。投资有风险，决策需谨慎。
