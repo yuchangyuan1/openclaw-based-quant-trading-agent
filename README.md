@@ -1,145 +1,199 @@
-# OpenClaw-based Quant Trading Advisor
+# OpenClaw 低频量化交易咨询 Agent（A 股）
 
-一个基于 **OpenClaw** 配置的低频量化交易咨询 Agent 项目。  
-面向 A 股中低频投资场景（日频 / 周频），强调**可解释**与**风险控制**。
+这是一个基于 **OpenClaw** 的低频量化投研项目，用于把“市场数据抓取 → 信号生成 → 中文建议 → 日报输出”串成可复用流程。
 
-> 本项目用于投资分析与决策支持，不是自动交易系统。
-
----
-
-## 1. 项目目标
-
-将“市场数据 → 量化信号 → 中文建议 → 飞书推送”串成稳定工作流，输出可复盘、可执行的低频投资建议。
-
-核心价值：
-- 用规则化方法减少主观情绪干扰
-- 用结构化报告提升决策效率
-- 用风控约束避免激进行为
+> 定位：**投资决策支持系统**（recommendation only），不是自动交易系统。
 
 ---
 
-## 2. 核心原则
+## 1. 项目功能概览
 
-来自项目配置 `SOUL.md`：
+本项目当前已实现：
+
+- ✅ 从 Tushare 拉取股票池与指数快照（`market_snapshot`）
+- ✅ 基于规则生成低频信号报告（`signal_report`）
+- ✅ 自动生成中文日报 Markdown
+- ✅ 关键策略参数配置化（无需改代码即可调参）
+- ✅ ClawHub 第三方 skills 隔离安装与审计记录
+
+核心工作流：
+
+```text
+config/*.yaml
+   ↓
+Tushare snapshot builder
+   ↓
+signal report builder
+   ↓
+daily report generator
+   ↓
+outputs/daily_report.generated.md
+```
+
+---
+
+## 2. 设计原则
+
+来自 `SOUL.md` / `IDENTITY.md`：
 
 - 可解释优先于复杂
 - 风险控制优先于收益冲动
 - 没有数据就不下结论
 - 没有显著变化就不重复打扰
-- 给建议时必须说明为什么
+- 不直接执行交易、不承诺收益
 
 ---
 
-## 3. Agent 角色分工
-
-来自 `AGENTS.md`：
-
-### MarketScanner
-- 定时抓取：大盘、行业、股票池、财报、新闻、公告
-- 输出：标准化市场数据包
-
-### SignalAnalyst
-- 计算低频量化指标
-- 输出：候选信号与风险评分（`signal_report.json`）
-
-### Advisor
-- 将量化结果转为中文投资建议
-- 约束：每个结论必须附**理由 / 风险 / 置信度**
-
-### Notifier
-- 将最终报告整理为飞书可读格式
-- 调用飞书机器人推送
-
----
-
-## 4. 用户画像与默认输出
-
-来自 `USER.md`：
-
-- 目标用户：中低频股票投资者
-- 默认市场：A 股
-- 风险偏好：中性偏稳健
-- 输出语言：中文
-
-默认报告结构：
-1. 市场概览
-2. 重点信号
-3. 股票池建议
-4. 风险提示
-5. 操作建议（观察 / 持有 / 减仓 / 增持）
-
----
-
-## 5. 调度计划（Heartbeat）
-
-来自 `HEARTBEAT.md`：
-
-- **交易日 08:30**：盘前观察（隔夜全球市场 + 股票池新闻公告）
-- **交易日 15:30**：收盘分析（生成并推送日报）
-- **周六 10:00**：周报（收益 / 回撤 / 信号变化汇总）
-
----
-
-## 6. 工具能力与约束
-
-来自 `TOOLS.md`：
-
-### market_data
-拉取指数、股票、行业板块、财务指标、公告、新闻等结构化数据。
-
-### quant_analysis
-计算趋势、动量、估值、波动、回撤、财报质量、风险暴露等因子并输出信号。
-
-### feishu_bot
-将摘要与详细分析推送至飞书。
-
-约束：
-- 数据必须标注时间
-- 无法获取新数据时不得编造
-- 推送前先生成摘要，再生成详细内容
-
----
-
-## 7. 边界声明
-
-来自 `IDENTITY.md`：
-
-- 不直接执行交易
-- 不承诺收益
-- 不进行高频交易决策
-- 不输出缺乏依据的结论
-- 所有建议需附：理由、风险、数据时间戳
-
----
-
-## 8. 当前仓库结构
+## 3. 项目结构（当前）
 
 ```text
 .
+├─ config/
+│  ├─ portfolio.yaml                # 市场/指数/股票池/仓位约束
+│  ├─ signal_rules.yaml             # 信号阈值、风险阈值、理由模板
+│  └─ notify_rules.yaml             # 推送与降噪规则
+├─ data/
+│  ├─ market_snapshot.tushare.json  # 实时拉取生成
+│  ├─ signal_report.generated.json  # 实时信号生成
+│  └─ *.sample.json                 # 样例数据
+├─ outputs/
+│  ├─ daily_report.generated.md     # 最终日报
+│  └─ feishu_payload.sample.json    # 飞书推送 dry-run 样例
+├─ schemas/
+│  └─ signal_report.schema.json     # 信号报告结构约束
+├─ scripts/
+│  ├─ build_market_snapshot_from_tushare.py
+│  ├─ build_signal_report_from_snapshot.py
+│  ├─ generate_daily_report.py
+│  └─ run_daily_pipeline.ps1        # 一键流水线入口
+├─ skills/
+│  ├─ README.md                     # skills 规划与检索结果
+│  ├─ tushare-finance/              # 已隔离安装（含审计）
+│  └─ akshare-finance/              # 已隔离安装（含审计）
+├─ examples/
 ├─ AGENTS.md
 ├─ HEARTBEAT.md
 ├─ IDENTITY.md
-├─ MEMORY.md
 ├─ SOUL.md
-├─ TOOLS.md
 ├─ USER.md
-├─ memory/
-└─ .openclaw/
+└─ README.md
 ```
 
 ---
 
-## 9. 下一步建议
+## 4. 快速开始
 
-可进一步补充：
-- `examples/`：盘前、日报、周报样例
-- `schemas/`：`signal_report.json` 字段定义
-- `prompts/`：标准化提示词模板
-- `.gitignore`：过滤运行态缓存与敏感文件
+### 4.1 前置要求
+
+- Windows + PowerShell
+- Python 3.11+（当前环境可用）
+- OpenClaw 已配置
+- Tushare 账号与可用 Token
+
+### 4.2 配置 TUSHARE_TOKEN
+
+PowerShell：
+
+```powershell
+setx TUSHARE_TOKEN "你的_tushare_token"
+```
+
+> 重新打开终端后生效。当前会话临时生效可用：
+> `$env:TUSHARE_TOKEN="你的_tushare_token"`
+
+### 4.3 安装依赖（隔离环境）
+
+项目已使用 `.venv-tushare`。如需重装：
+
+```powershell
+python -m venv .venv-tushare
+.\.venv-tushare\Scripts\python -m pip install -r skills\tushare-finance\requirements.txt
+```
+
+### 4.4 一键运行日报流水线
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run_daily_pipeline.ps1
+```
+
+运行成功后查看：
+
+- `data/market_snapshot.tushare.json`
+- `data/signal_report.generated.json`
+- `outputs/daily_report.generated.md`
 
 ---
 
-如果你愿意，我可以继续直接补上：
-1) `.gitignore`（按 OpenClaw 运行目录优化）  
-2) `examples/daily_report.md` 与 `examples/weekly_report.md`  
-3) 一个最小可运行的报告生成脚手架。
+## 5. 如何调参（只改配置，不改代码）
+
+### 5.1 改股票池与指数
+
+编辑 `config/portfolio.yaml`：
+
+- `indexes`: 日报中的指数集合
+- `watchlist`: 信号生成覆盖的股票池
+- `portfolio_constraints`: 仓位/行业暴露/回撤约束
+
+### 5.2 改信号规则
+
+编辑 `config/signal_rules.yaml`：
+
+- `thresholds`: increase / hold / observe / reduce 划分
+- `risk_change_pct`: 低/中/高风险阈值
+- `model_params.default_confidence`: 默认置信度
+- `global_risk_thresholds`: normal/cautious/defensive 切换规则
+- `reason_templates`: 信号理由模板文案
+
+---
+
+## 6. 关键脚本说明
+
+- `build_market_snapshot_from_tushare.py`
+  - 从 `portfolio.yaml` 读取市场、指数、股票池
+  - 拉取行情并生成 `market_snapshot.tushare.json`
+
+- `build_signal_report_from_snapshot.py`
+  - 读取 snapshot 与 `signal_rules.yaml`
+  - 生成 `signal_report.generated.json`
+
+- `generate_daily_report.py`
+  - 合并 snapshot + signal
+  - 输出中文结构化日报 markdown
+
+- `run_daily_pipeline.ps1`
+  - 串联以上三步，一键执行
+
+---
+
+## 7. 第三方 Skill 使用策略（安全）
+
+本项目对第三方 skills 采用“先隔离、后验收”的策略：
+
+- `skills/tushare-finance/ISOLATION_AUDIT.md`
+- `skills/akshare-finance/ISOLATION_AUDIT.md`
+
+原则：
+- 不直接把未知 skill 接入主流程
+- 先做静态检查、依赖隔离、最小联通测试
+- 再决定是否进入生产链路
+
+---
+
+## 8. 当前边界与后续计划
+
+### 当前边界
+- 仅输出建议，不执行交易
+- 指数接口权限受 Tushare 账号权限影响（脚本已做降级处理）
+- 信号模型仍是可解释的简化规则版（适合先跑通）
+
+### 后续计划
+- [ ] 加入更多因子（波动、回撤、估值、财报质量）
+- [ ] 增加历史建议对比（delta_vs_last 真实化）
+- [ ] 接入飞书正式推送（当前已有 dry-run payload）
+- [ ] 周报自动复盘与参数迭代
+
+---
+
+## 9. 免责声明
+
+本项目仅用于投研与决策辅助，不构成任何投资承诺或收益保证。投资有风险，决策需谨慎。
