@@ -70,6 +70,20 @@ def normalize_ret(ret: float, lo=-0.08, hi=0.08) -> float:
     return clamp01(x)
 
 
+def score_valuation(pe, pb):
+    # lower is better within reasonable ranges
+    pe_s = 0.5 if pe is None else clamp01((30 - pe) / 30)
+    pb_s = 0.5 if pb is None else clamp01((5 - pb) / 5)
+    return round((pe_s + pb_s) / 2, 3)
+
+
+def score_earnings(roe, gpm, d2a):
+    roe_s = 0.5 if roe is None else clamp01(roe / 20)
+    gpm_s = 0.5 if gpm is None else clamp01(gpm / 50)
+    d2a_s = 0.5 if d2a is None else clamp01((70 - d2a) / 70)
+    return round((roe_s + gpm_s + d2a_s) / 3, 3)
+
+
 def signal_from_score(score: float, thresholds: dict) -> str:
     buy_watch = float(thresholds.get("buy_watch", 0.70))
     hold = float(thresholds.get("hold", 0.55))
@@ -115,13 +129,16 @@ def main():
         symbol = s.get("symbol")
         change_pct = float(s.get("change_pct", 0.0))
         fi = s.get("factor_inputs", {}) or {}
+        val = s.get("valuation", {}) or {}
+        earn = s.get("earnings", {}) or {}
 
         trend = normalize_ret(float(fi.get("ret_20d", 0.0)))
         momentum = normalize_ret(float(fi.get("ret_5d", 0.0)))
         volatility = clamp01(1 - (float(fi.get("volatility_20d", 0.0)) / 0.06))
         drawdown = clamp01(0.55 + float(fi.get("ret_20d", 0.0)) * 2)
-        valuation = 0.5  # 待接入 daily_basic PE/PB
-        earnings_quality = 0.5  # 待接入财报因子
+
+        valuation = score_valuation(val.get("pe"), val.get("pb"))
+        earnings_quality = score_earnings(earn.get("roe"), earn.get("grossprofit_margin"), earn.get("debt_to_assets"))
 
         score = (
             w.get("trend", 0.25) * trend
@@ -142,8 +159,8 @@ def main():
             f"20日趋势收益率={fi.get('ret_20d', 0.0):.2%}",
             f"5日动量收益率={fi.get('ret_5d', 0.0):.2%}",
             f"20日波动率={fi.get('volatility_20d', 0.0):.2%}",
-            f"量比(5日/基准)={fi.get('volume_ratio_5d', 1.0):.2f}",
-            "估值/财报因子当前为占位分，后续接入Tushare财务接口增强",
+            f"估值因子: PE={val.get('pe')} PB={val.get('pb')} 评分={valuation}",
+            f"财报因子: ROE={earn.get('roe')} 毛利率={earn.get('grossprofit_margin')} 资产负债率={earn.get('debt_to_assets')} 评分={earnings_quality}",
         ]
 
         if not data_quality_passed and signal == "increase":
