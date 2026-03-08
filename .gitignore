@@ -7,3 +7,6 @@
 # python/node common
 __pycache__/
 node_modules/
+
+# clawhub local cache
+.clawhub/
