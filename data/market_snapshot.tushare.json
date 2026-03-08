@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-08T00:05:40-05:00",
+  "timestamp": "2026-03-08T00:17:29-05:00",
   "market": "CN-A",
   "index": {
     "000001.SH": {
@@ -17,9 +17,9 @@
   },
   "symbols": [
     {
-      "symbol": "000001.SZ",
-      "close": 10.82,
-      "change_pct": 0.0925,
+      "symbol": "600519.SH",
+      "close": 1402.0,
+      "change_pct": 0.2116,
       "trade_date": "20260306"
     },
     {

@@ -1,16 +1,16 @@
 {
-  "timestamp": "2026-03-08T00:16:14-05:00",
+  "timestamp": "2026-03-08T00:17:29-05:00",
   "market": "CN-A",
   "global_risk_state": "normal",
   "signals": [
     {
-      "symbol": "000001.SZ",
+      "symbol": "600519.SH",
       "signal": "observe",
-      "score": 0.5092,
+      "score": 0.5212,
       "confidence": 0.62,
       "risk_level": "low",
       "reasons": [
-        "当日涨跌幅 0.0925%",
+        "当日涨跌幅 0.2116%",
         "阈值规则：buy_watch=0.7, hold=0.55, reduce=0.4",
         "需结合后续财报/波动因子二次确认"
       ],
