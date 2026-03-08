@@ -1,0 +1,24 @@
+market: CN-A
+risk_profile: neutral_steady
+
+portfolio_constraints:
+  max_position_per_stock: 0.20
+  max_sector_exposure: 0.35
+  max_portfolio_drawdown: -0.08
+
+watchlist:
+  - symbol: SH.600519
+    name: 贵州茅台
+  - symbol: SZ.000858
+    name: 五粮液
+  - symbol: SH.600036
+    name: 招商银行
+  - symbol: SZ.300750
+    name: 宁德时代
+  - symbol: SH.601318
+    name: 中国平安
+
+execution_policy:
+  frequency: daily_weekly
+  auto_trade: false
+  recommendation_only: true

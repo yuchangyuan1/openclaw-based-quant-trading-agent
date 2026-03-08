@@ -1,0 +1,32 @@
+version: 1
+updated_at: 2026-03-07
+
+weights:
+  trend: 0.25
+  momentum: 0.20
+  valuation: 0.15
+  volatility: 0.15
+  drawdown: 0.15
+  earnings_quality: 0.10
+
+thresholds:
+  buy_watch: 0.70
+  hold: 0.55
+  reduce: 0.40
+
+risk_levels:
+  low:
+    max_volatility: 0.20
+    max_drawdown: -0.08
+  medium:
+    max_volatility: 0.30
+    max_drawdown: -0.12
+  high:
+    max_volatility: 0.45
+    max_drawdown: -0.18
+
+signal_policy:
+  require_explainability: true
+  require_timestamp: true
+  require_confidence: true
+  no_new_data_no_conclusion: true

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Signal Report",
+  "type": "object",
+  "required": ["timestamp", "market", "signals"],
+  "properties": {
+    "timestamp": { "type": "string" },
+    "market": { "type": "string" },
+    "signals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["symbol", "signal", "score", "confidence", "risk_level", "reasons"],
+        "properties": {
+          "symbol": { "type": "string" },
+          "signal": { "type": "string", "enum": ["observe", "hold", "increase", "reduce"] },
+          "score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "risk_level": { "type": "string", "enum": ["low", "medium", "high"] },
+          "reasons": { "type": "array", "items": { "type": "string" } },
+          "delta_vs_last": { "type": "string" }
+        }
+      }
+    },
+    "global_risk_state": { "type": "string", "enum": ["normal", "cautious", "defensive"] }
+  }
+}

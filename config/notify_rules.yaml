@@ -1,0 +1,22 @@
+channels:
+  - feishu
+
+schedule:
+  pre_market: "08:30"
+  post_market: "15:30"
+  weekly: "Sat 10:00"
+
+noise_control:
+  deduplicate_same_conclusion_within_hours: 24
+  suppress_if_no_significant_change: true
+
+event_triggers:
+  market_risk_spike: true
+  single_stock_drawdown_breach: true
+  major_announcement_risk: true
+  data_source_failure: true
+
+message_levels:
+  info: "市场观察"
+  warning: "风险提示"
+  critical: "紧急风险快报"

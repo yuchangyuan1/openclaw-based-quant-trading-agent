@@ -1,0 +1,11 @@
+.openclaw/*.log
+.openclaw/tmp/
+.openclaw/cache/
+
+# local secrets
+*.env
+*.env.local
+
+# python/node common
+__pycache__/
+node_modules/
