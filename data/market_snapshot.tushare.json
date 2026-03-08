@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-03-08T00:05:40-05:00",
+  "market": "CN-A",
+  "index": {
+    "000001.SH": {
+      "name": "上证指数",
+      "status": "permission_denied"
+    },
+    "399001.SZ": {
+      "name": "深证成指",
+      "status": "permission_denied"
+    },
+    "399006.SZ": {
+      "name": "创业板指",
+      "status": "permission_denied"
+    }
+  },
+  "symbols": [
+    {
+      "symbol": "000001.SZ",
+      "close": 10.82,
+      "change_pct": 0.0925,
+      "trade_date": "20260306"
+    },
+    {
+      "symbol": "000858.SZ",
+      "close": 102.4,
+      "change_pct": 0.9364,
+      "trade_date": "20260306"
+    },
+    {
+      "symbol": "600036.SH",
+      "close": 39.2,
+      "change_pct": 0.1277,
+      "trade_date": "20260306"
+    },
+    {
+      "symbol": "300750.SZ",
+      "close": 354.77,
+      "change_pct": 1.2905,
+      "trade_date": "20260306"
+    },
+    {
+      "symbol": "601318.SH",
+      "close": 62.67,
+      "change_pct": 0.9504,
+      "trade_date": "20260306"
+    }
+  ],
+  "news": []
+}
