@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Signal Evaluation Report",
+  "type": "object",
+  "required": ["week", "summary", "by_signal_type", "by_risk_level", "calibration_hint"],
+  "properties": {
+    "week": { "type": "string" },
+    "summary": { "type": "object" },
+    "by_signal_type": { "type": "object" },
+    "by_risk_level": { "type": "object" },
+    "calibration_hint": { "type": "object" }
+  }
+}

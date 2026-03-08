@@ -43,22 +43,11 @@ def load_signal_rules(path: Path):
             if not line or line.startswith("#"):
                 continue
 
-            if line == "thresholds:":
-                current = "thresholds"
+            if line in ("thresholds:", "risk_change_pct:", "model_params:", "global_risk_thresholds:", "reason_templates:"):
+                current = line[:-1]
                 continue
-            if line == "risk_change_pct:":
-                current = "risk_change_pct"
-                continue
-            if line == "model_params:":
-                current = "model_params"
-                continue
-            if line == "global_risk_thresholds:":
-                current = "global_risk_thresholds"
-                continue
-            if line == "reason_templates:":
-                current = "reason_templates"
-                continue
-            if line.endswith(":") and not line.startswith(("buy_watch", "hold", "reduce", "low", "medium", "default_confidence", "cautious_high_risk_count", "defensive_high_risk_count", "price_change", "model_note", "caution_note")):
+
+            if line.endswith(":"):
                 current = None
                 continue
 
@@ -76,7 +65,6 @@ def load_signal_rules(path: Path):
 
 
 def score_from_change(change_pct: float) -> float:
-    # map roughly [-5%, +5%] -> [0,1]
     x = max(-5.0, min(5.0, change_pct))
     return round((x + 5.0) / 10.0, 4)
 
@@ -99,12 +87,21 @@ def risk_level(change_pct: float, risk_cfg: dict) -> str:
     a = abs(change_pct)
     low_cutoff = float(risk_cfg.get("low", 1.5))
     medium_cutoff = float(risk_cfg.get("medium", 3.0))
-
     if a < low_cutoff:
         return "low"
     if a < medium_cutoff:
         return "medium"
     return "high"
+
+
+def evidence_from_change(change_pct: float):
+    base = score_from_change(change_pct)
+    return {
+        "trend": round(base, 3),
+        "momentum": round(max(0.0, min(1.0, base + 0.05)), 3),
+        "valuation": 0.5,
+        "volatility": round(max(0.0, min(1.0, abs(change_pct) / 5)), 3),
+    }
 
 
 def main():
@@ -113,9 +110,11 @@ def main():
         raise SystemExit("market_snapshot.tushare.json missing. run snapshot builder first")
 
     rules = load_signal_rules(CFG / "signal_rules.yaml")
-
     snap = load_json(snap_path)
+
     ts = snap.get("timestamp") or datetime.now().isoformat(timespec="seconds")
+    quality_score = float(snap.get("snapshot_quality_score", 0))
+    data_quality_passed = quality_score >= 60
 
     signals = []
     high_risk_count = 0
@@ -140,6 +139,10 @@ def main():
             rt.get("caution_note", "需结合后续财报/波动因子二次确认"),
         ]
 
+        if not data_quality_passed and sig == "increase":
+            sig = "observe"
+            reasons.append("数据质量闸门未通过：降级为观察")
+
         signals.append(
             {
                 "symbol": symbol,
@@ -148,7 +151,9 @@ def main():
                 "confidence": float(rules["model_params"].get("default_confidence", 0.62)),
                 "risk_level": rl,
                 "reasons": reasons,
-                "delta_vs_last": "首次自动生成，后续将对比历史建议",
+                "delta_vs_last": "待与 advice_history 对比",
+                "evidence": evidence_from_change(chg),
+                "data_quality_gate": {"passed": data_quality_passed, "quality_score": quality_score},
             }
         )
 
@@ -170,9 +175,7 @@ def main():
     }
 
     out_path = DATA / "signal_report.generated.json"
-    with out_path.open("w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False, indent=2)
-
+    out_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"generated: {out_path}")
 
 

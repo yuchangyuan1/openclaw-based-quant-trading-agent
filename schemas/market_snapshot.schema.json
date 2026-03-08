@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Market Snapshot",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "market",
+    "symbols",
+    "index",
+    "sector",
+    "news",
+    "data_freshness_sec",
+    "source_health",
+    "missing_fields",
+    "snapshot_quality_score"
+  ],
+  "properties": {
+    "timestamp": { "type": "string" },
+    "market": { "type": "string" },
+    "symbols": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["symbol", "close", "change_pct", "trade_date"],
+        "properties": {
+          "symbol": { "type": "string" },
+          "close": { "type": "number" },
+          "change_pct": { "type": "number" },
+          "trade_date": { "type": "string" }
+        }
+      }
+    },
+    "index": { "type": "object" },
+    "sector": { "type": ["object", "array"] },
+    "news": { "type": "array" },
+    "data_freshness_sec": { "type": "number", "minimum": 0 },
+    "source_health": {
+      "type": "object",
+      "required": ["quote", "news", "fundamental"],
+      "properties": {
+        "quote": { "type": "string", "enum": ["ok", "cached", "fallback", "error"] },
+        "news": { "type": "string", "enum": ["ok", "cached", "fallback", "error"] },
+        "fundamental": { "type": "string", "enum": ["ok", "cached", "fallback", "error"] }
+      }
+    },
+    "missing_fields": { "type": "array", "items": { "type": "string" } },
+    "snapshot_quality_score": { "type": "number", "minimum": 0, "maximum": 100 }
+  }
+}

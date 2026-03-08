@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Portfolio Risk Report",
+  "type": "object",
+  "required": ["timestamp", "constraints", "current", "violations", "risk_state"],
+  "properties": {
+    "timestamp": { "type": "string" },
+    "constraints": { "type": "object" },
+    "current": { "type": "object" },
+    "violations": { "type": "array", "items": { "type": "string" } },
+    "risk_state": { "type": "string", "enum": ["normal", "cautious", "defensive"] }
+  }
+}
