@@ -10,7 +10,7 @@
 
 - ✅ Tushare 数据抓取（股票池 + 指数）
 - ✅ 数据质量闸门：`freshness/source_health/quality_score`
-- ✅ 信号生成（含 `evidence` 与 `data_quality_gate`）
+- ✅ 多因子信号生成（趋势/动量/波动/回撤 + 占位估值/财报因子，含 `evidence` 与 `data_quality_gate`）
 - ✅ 组合风险报告（单票/行业/回撤约束）
 - ✅ 建议去重（24h 同结论同理由抑制）
 - ✅ 建议变更记录（`change_vs_last`）

@@ -85,6 +85,43 @@ def health_from_flags(ok_count: int, total: int) -> str:
     return "error"
 
 
+def safe_pct(a, b):
+    if b == 0:
+        return 0.0
+    return (a - b) / b
+
+
+def build_factor_inputs(df):
+    # df: tushare daily descending by trade_date
+    if df is None or len(df) < 2:
+        return {"ret_1d": 0.0, "ret_5d": 0.0, "ret_20d": 0.0, "volatility_20d": 0.0, "volume_ratio_5d": 1.0}
+
+    closes = [float(x) for x in df["close"].tolist()]
+    vols = [float(x) for x in df["vol"].tolist()]
+
+    # descending -> latest at index 0
+    ret_1d = safe_pct(closes[0], closes[1]) if len(closes) >= 2 else 0.0
+    ret_5d = safe_pct(closes[0], closes[5]) if len(closes) >= 6 else safe_pct(closes[0], closes[-1])
+    ret_20d = safe_pct(closes[0], closes[20]) if len(closes) >= 21 else safe_pct(closes[0], closes[-1])
+
+    recent = closes[:20] if len(closes) >= 20 else closes
+    mean = sum(recent) / len(recent)
+    variance = sum((x - mean) ** 2 for x in recent) / max(len(recent), 1)
+    volatility_20d = (variance ** 0.5) / mean if mean != 0 else 0.0
+
+    vol_5 = sum(vols[:5]) / min(len(vols), 5)
+    vol_rest = sum(vols[5:20]) / max(min(len(vols), 20) - 5, 1) if len(vols) > 5 else vol_5
+    volume_ratio_5d = vol_5 / vol_rest if vol_rest > 0 else 1.0
+
+    return {
+        "ret_1d": round(ret_1d, 6),
+        "ret_5d": round(ret_5d, 6),
+        "ret_20d": round(ret_20d, 6),
+        "volatility_20d": round(volatility_20d, 6),
+        "volume_ratio_5d": round(volume_ratio_5d, 4),
+    }
+
+
 def main():
     token = os.getenv("TUSHARE_TOKEN")
     if not token:
@@ -115,7 +152,7 @@ def main():
     idx_ok = 0
     for code, name in indexes.items():
         try:
-            df = pro.index_daily(ts_code=code, start_date="20260301", end_date="20260331")
+            df = pro.index_daily(ts_code=code, start_date="20260101", end_date="20261231")
             if len(df) >= 1:
                 latest = df.iloc[0]
                 out["index"][code] = {
@@ -132,7 +169,7 @@ def main():
     sym_ok = 0
     for code in watchlist:
         try:
-            df = pro.daily(ts_code=code, start_date="20260301", end_date="20260331")
+            df = pro.daily(ts_code=code, start_date="20260101", end_date="20261231")
             if len(df) >= 1:
                 latest = df.iloc[0]
                 out["symbols"].append(
@@ -141,6 +178,7 @@ def main():
                         "close": float(latest["close"]),
                         "change_pct": float(latest["pct_chg"]),
                         "trade_date": str(latest["trade_date"]),
+                        "factor_inputs": build_factor_inputs(df.head(30)),
                     }
                 )
                 sym_ok += 1
@@ -155,14 +193,12 @@ def main():
             if key not in ("news", "sector"):
                 out["missing_fields"].append(key)
 
-    # quality score: 50 for quote health + 30 for symbol coverage + 20 for index coverage
     quote_base = {"ok": 50, "fallback": 30, "cached": 40, "error": 10}.get(out["source_health"]["quote"], 10)
     sym_cov = 0 if len(watchlist) == 0 else int(30 * (sym_ok / len(watchlist)))
     idx_cov = 0 if len(indexes) == 0 else int(20 * (idx_ok / len(indexes)))
     quality_score = max(0, min(100, quote_base + sym_cov + idx_cov - len(out["missing_fields"]) * 10))
     out["snapshot_quality_score"] = quality_score
 
-    # current generated file is real-time, so freshness is 0 at write time
     out["data_freshness_sec"] = int((datetime.now(timezone.utc) - now.astimezone(timezone.utc)).total_seconds())
 
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")

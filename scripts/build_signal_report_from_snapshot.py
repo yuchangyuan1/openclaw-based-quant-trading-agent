@@ -7,15 +7,18 @@ DATA = ROOT / "data"
 CFG = ROOT / "config"
 
 DEFAULT_RULES = {
+    "weights": {
+        "trend": 0.25,
+        "momentum": 0.20,
+        "valuation": 0.15,
+        "volatility": 0.15,
+        "drawdown": 0.15,
+        "earnings_quality": 0.10,
+    },
     "thresholds": {"buy_watch": 0.70, "hold": 0.55, "reduce": 0.40},
     "risk_change_pct": {"low": 1.5, "medium": 3.0},
     "model_params": {"default_confidence": 0.62},
     "global_risk_thresholds": {"cautious_high_risk_count": 1, "defensive_high_risk_count": 2},
-    "reason_templates": {
-        "price_change": "当日涨跌幅 {change_pct}%",
-        "model_note": "阈值规则：buy_watch={buy_watch}, hold={hold}, reduce={reduce}",
-        "caution_note": "需结合后续财报/波动因子二次确认",
-    },
 }
 
 
@@ -26,11 +29,11 @@ def load_json(p: Path):
 
 def load_signal_rules(path: Path):
     rules = {
+        "weights": DEFAULT_RULES["weights"].copy(),
         "thresholds": DEFAULT_RULES["thresholds"].copy(),
         "risk_change_pct": DEFAULT_RULES["risk_change_pct"].copy(),
         "model_params": DEFAULT_RULES["model_params"].copy(),
         "global_risk_thresholds": DEFAULT_RULES["global_risk_thresholds"].copy(),
-        "reason_templates": DEFAULT_RULES["reason_templates"].copy(),
     }
 
     if not path.exists():
@@ -42,38 +45,35 @@ def load_signal_rules(path: Path):
             line = raw.strip()
             if not line or line.startswith("#"):
                 continue
-
-            if line in ("thresholds:", "risk_change_pct:", "model_params:", "global_risk_thresholds:", "reason_templates:"):
+            if line in ("weights:", "thresholds:", "risk_change_pct:", "model_params:", "global_risk_thresholds:"):
                 current = line[:-1]
                 continue
-
             if line.endswith(":"):
                 current = None
                 continue
-
             if current and ":" in line:
                 k, v = [x.strip() for x in line.split(":", 1)]
-                if current == "reason_templates":
-                    rules[current][k] = v.strip('"').strip("'")
-                else:
-                    try:
-                        rules[current][k] = float(v)
-                    except ValueError:
-                        pass
+                try:
+                    rules[current][k] = float(v)
+                except ValueError:
+                    pass
 
     return rules
 
 
-def score_from_change(change_pct: float) -> float:
-    x = max(-5.0, min(5.0, change_pct))
-    return round((x + 5.0) / 10.0, 4)
+def clamp01(x: float) -> float:
+    return max(0.0, min(1.0, x))
+
+
+def normalize_ret(ret: float, lo=-0.08, hi=0.08) -> float:
+    x = (ret - lo) / (hi - lo)
+    return clamp01(x)
 
 
 def signal_from_score(score: float, thresholds: dict) -> str:
     buy_watch = float(thresholds.get("buy_watch", 0.70))
     hold = float(thresholds.get("hold", 0.55))
     reduce = float(thresholds.get("reduce", 0.40))
-
     if score >= buy_watch:
         return "increase"
     if score >= hold:
@@ -83,25 +83,16 @@ def signal_from_score(score: float, thresholds: dict) -> str:
     return "reduce"
 
 
-def risk_level(change_pct: float, risk_cfg: dict) -> str:
-    a = abs(change_pct)
+def risk_level_from_vol_change(change_pct: float, volatility20: float, risk_cfg: dict) -> str:
+    abs_chg = abs(change_pct)
     low_cutoff = float(risk_cfg.get("low", 1.5))
     medium_cutoff = float(risk_cfg.get("medium", 3.0))
-    if a < low_cutoff:
-        return "low"
-    if a < medium_cutoff:
+
+    if volatility20 > 0.04 or abs_chg >= medium_cutoff:
+        return "high"
+    if volatility20 > 0.025 or abs_chg >= low_cutoff:
         return "medium"
-    return "high"
-
-
-def evidence_from_change(change_pct: float):
-    base = score_from_change(change_pct)
-    return {
-        "trend": round(base, 3),
-        "momentum": round(max(0.0, min(1.0, base + 0.05)), 3),
-        "valuation": 0.5,
-        "volatility": round(max(0.0, min(1.0, abs(change_pct) / 5)), 3),
-    }
+    return "low"
 
 
 def main():
@@ -116,43 +107,64 @@ def main():
     quality_score = float(snap.get("snapshot_quality_score", 0))
     data_quality_passed = quality_score >= 60
 
+    w = rules["weights"]
     signals = []
     high_risk_count = 0
 
     for s in snap.get("symbols", []):
         symbol = s.get("symbol")
-        chg = float(s.get("change_pct", 0.0))
-        sc = score_from_change(chg)
-        sig = signal_from_score(sc, rules["thresholds"])
-        rl = risk_level(chg, rules["risk_change_pct"])
-        if rl == "high":
+        change_pct = float(s.get("change_pct", 0.0))
+        fi = s.get("factor_inputs", {}) or {}
+
+        trend = normalize_ret(float(fi.get("ret_20d", 0.0)))
+        momentum = normalize_ret(float(fi.get("ret_5d", 0.0)))
+        volatility = clamp01(1 - (float(fi.get("volatility_20d", 0.0)) / 0.06))
+        drawdown = clamp01(0.55 + float(fi.get("ret_20d", 0.0)) * 2)
+        valuation = 0.5  # 待接入 daily_basic PE/PB
+        earnings_quality = 0.5  # 待接入财报因子
+
+        score = (
+            w.get("trend", 0.25) * trend
+            + w.get("momentum", 0.20) * momentum
+            + w.get("valuation", 0.15) * valuation
+            + w.get("volatility", 0.15) * volatility
+            + w.get("drawdown", 0.15) * drawdown
+            + w.get("earnings_quality", 0.10) * earnings_quality
+        )
+        score = round(clamp01(score), 4)
+
+        signal = signal_from_score(score, rules["thresholds"])
+        risk_level = risk_level_from_vol_change(change_pct, float(fi.get("volatility_20d", 0.0)), rules["risk_change_pct"])
+        if risk_level == "high":
             high_risk_count += 1
 
-        rt = rules["reason_templates"]
         reasons = [
-            rt.get("price_change", "当日涨跌幅 {change_pct}%").format(change_pct=chg),
-            rt.get("model_note", "阈值规则：buy_watch={buy_watch}, hold={hold}, reduce={reduce}").format(
-                buy_watch=rules["thresholds"].get("buy_watch"),
-                hold=rules["thresholds"].get("hold"),
-                reduce=rules["thresholds"].get("reduce"),
-            ),
-            rt.get("caution_note", "需结合后续财报/波动因子二次确认"),
+            f"20日趋势收益率={fi.get('ret_20d', 0.0):.2%}",
+            f"5日动量收益率={fi.get('ret_5d', 0.0):.2%}",
+            f"20日波动率={fi.get('volatility_20d', 0.0):.2%}",
+            f"量比(5日/基准)={fi.get('volume_ratio_5d', 1.0):.2f}",
+            "估值/财报因子当前为占位分，后续接入Tushare财务接口增强",
         ]
 
-        if not data_quality_passed and sig == "increase":
-            sig = "observe"
-            reasons.append("数据质量闸门未通过：降级为观察")
+        if not data_quality_passed and signal == "increase":
+            signal = "observe"
+            reasons.append("数据质量闸门未通过：增持信号降级为观察")
 
         signals.append(
             {
                 "symbol": symbol,
-                "signal": sig,
-                "score": sc,
+                "signal": signal,
+                "score": score,
                 "confidence": float(rules["model_params"].get("default_confidence", 0.62)),
-                "risk_level": rl,
+                "risk_level": risk_level,
                 "reasons": reasons,
                 "delta_vs_last": "待与 advice_history 对比",
-                "evidence": evidence_from_change(chg),
+                "evidence": {
+                    "trend": round(trend, 3),
+                    "momentum": round(momentum, 3),
+                    "valuation": round(valuation, 3),
+                    "volatility": round(volatility, 3),
+                },
                 "data_quality_gate": {"passed": data_quality_passed, "quality_score": quality_score},
             }
         )
