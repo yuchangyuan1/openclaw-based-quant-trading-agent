@@ -17,15 +17,19 @@ Write-Host '[3/5] Building portfolio risk report...'
 Write-Host '[4/5] Updating advice history and dedup states...'
 .\.venv-tushare\Scripts\python scripts\update_advice_history.py
 
-Write-Host '[5/6] Generating daily report markdown...'
+Write-Host '[5/7] Generating daily report markdown...'
 .\.venv-tushare\Scripts\python scripts\generate_daily_report.py
 
-Write-Host '[6/6] Finalizing push state...'
+Write-Host '[6/7] Building Feishu card payload...'
+.\.venv-tushare\Scripts\python scripts\build_feishu_card_payload.py
+
+Write-Host '[7/7] Finalizing push state...'
 .\.venv-tushare\Scripts\python scripts\finalize_push_state.py
 
 Write-Host 'Done. Outputs:'
 Write-Host ' - outputs\daily_report.generated.md'
+Write-Host ' - outputs\feishu_card_payload.generated.json'
 Write-Host ' - outputs\portfolio_risk_report.json'
 Write-Host ' - outputs\advice_actions.json'
 Write-Host ' - state\push_job_state.json'
-Write-Host ' - push delivery: handled by OpenClaw Feishu channel (App ID/App Secret)'
+Write-Host ' - push delivery: handled by OpenClaw Feishu channel (App ID/App Secret), default format = card'

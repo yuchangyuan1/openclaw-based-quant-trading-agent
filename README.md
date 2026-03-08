@@ -23,16 +23,17 @@
 
 ## 2. 核心流程（当前主流水线）
 
-`run_daily_pipeline.ps1` 现为 6 步：
+`run_daily_pipeline.ps1` 现为 7 步：
 
 1. `build_market_snapshot_from_tushare.py`
 2. `build_signal_report_from_snapshot.py`
 3. `build_portfolio_risk_report.py`
 4. `update_advice_history.py`
 5. `generate_daily_report.py`
-6. `finalize_push_state.py`
+6. `build_feishu_card_payload.py`
+7. `finalize_push_state.py`
 
-日报推送由 OpenClaw 已连接的 Feishu 通道执行。
+日报推送由 OpenClaw 已连接的 Feishu 通道执行，默认消息格式为卡片。
 ---
 
 ## 3. 项目结构（关键目录）

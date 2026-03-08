@@ -13,8 +13,9 @@
 3. `build_portfolio_risk_report.py`
 4. `update_advice_history.py`
 5. `generate_daily_report.py`
-6. `finalize_push_state.py`
-7. 由 OpenClaw Feishu 通道（App ID/App Secret）推送日报
+6. `build_feishu_card_payload.py`
+7. `finalize_push_state.py`
+8. 由 OpenClaw Feishu 通道（App ID/App Secret）推送日报（默认卡片）
 
 失败降级：
 - 任一步失败，输出“系统状态 + 风险提示”，不输出交易建议
