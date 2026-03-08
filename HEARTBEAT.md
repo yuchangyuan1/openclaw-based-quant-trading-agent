@@ -13,7 +13,9 @@
 3. `build_portfolio_risk_report.py`
 4. `update_advice_history.py`
 5. `generate_daily_report.py`
-6. 推送飞书日报
+6. `finalize_push_state.py`
+7. `push_daily_to_feishu.py`
+8. `consume_retry_queue.py`
 
 失败降级：
 - 任一步失败，输出“系统状态 + 风险提示”，不输出交易建议
