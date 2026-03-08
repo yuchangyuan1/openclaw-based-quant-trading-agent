@@ -8,7 +8,10 @@ if (-not $env:TUSHARE_TOKEN) {
 Write-Host '[1/2] Building market snapshot from Tushare...'
 .\.venv-tushare\Scripts\python scripts\build_market_snapshot_from_tushare.py
 
-Write-Host '[2/2] Generating daily report markdown...'
+Write-Host '[2/3] Building signal report from snapshot...'
+python scripts\build_signal_report_from_snapshot.py
+
+Write-Host '[3/3] Generating daily report markdown...'
 python scripts\generate_daily_report.py
 
 Write-Host 'Done. Output: outputs\daily_report.generated.md'

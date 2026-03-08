@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-03-08T00:12:12-05:00",
+  "market": "CN-A",
+  "global_risk_state": "normal",
+  "signals": [
+    {
+      "symbol": "000001.SZ",
+      "signal": "observe",
+      "score": 0.5092,
+      "confidence": 0.62,
+      "risk_level": "low",
+      "reasons": [
+        "当日涨跌幅 0.0925%",
+        "基于日频简化打分模型",
+        "需结合后续财报/波动因子二次确认"
+      ],
+      "delta_vs_last": "首次自动生成，后续将对比历史建议"
+    },
+    {
+      "symbol": "000858.SZ",
+      "signal": "hold",
+      "score": 0.5936,
+      "confidence": 0.62,
+      "risk_level": "low",
+      "reasons": [
+        "当日涨跌幅 0.9364%",
+        "基于日频简化打分模型",
+        "需结合后续财报/波动因子二次确认"
+      ],
+      "delta_vs_last": "首次自动生成，后续将对比历史建议"
+    },
+    {
+      "symbol": "600036.SH",
+      "signal": "observe",
+      "score": 0.5128,
+      "confidence": 0.62,
+      "risk_level": "low",
+      "reasons": [
+        "当日涨跌幅 0.1277%",
+        "基于日频简化打分模型",
+        "需结合后续财报/波动因子二次确认"
+      ],
+      "delta_vs_last": "首次自动生成，后续将对比历史建议"
+    },
+    {
+      "symbol": "300750.SZ",
+      "signal": "hold",
+      "score": 0.629,
+      "confidence": 0.62,
+      "risk_level": "low",
+      "reasons": [
+        "当日涨跌幅 1.2905%",
+        "基于日频简化打分模型",
+        "需结合后续财报/波动因子二次确认"
+      ],
+      "delta_vs_last": "首次自动生成，后续将对比历史建议"
+    },
+    {
+      "symbol": "601318.SH",
+      "signal": "hold",
+      "score": 0.595,
+      "confidence": 0.62,
+      "risk_level": "low",
+      "reasons": [
+        "当日涨跌幅 0.9504%",
+        "基于日频简化打分模型",
+        "需结合后续财报/波动因子二次确认"
+      ],
+      "delta_vs_last": "首次自动生成，后续将对比历史建议"
+    }
+  ]
+}

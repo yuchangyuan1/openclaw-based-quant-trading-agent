@@ -30,9 +30,17 @@ def pick_snapshot():
     return load_json(sample_path), str(sample_path.name)
 
 
+def pick_report():
+    real_path = DATA / "signal_report.generated.json"
+    sample_path = DATA / "signal_report.sample.json"
+    if real_path.exists():
+        return load_json(real_path), str(real_path.name)
+    return load_json(sample_path), str(sample_path.name)
+
+
 def main():
     snapshot, snapshot_source = pick_snapshot()
-    report = load_json(DATA / "signal_report.sample.json")
+    report, report_source = pick_report()
 
     ts = snapshot.get("timestamp") or report.get("timestamp") or datetime.now().isoformat()
     leaders = "、".join(snapshot.get("sector", {}).get("leaders", [])) or "暂无"
@@ -43,7 +51,8 @@ def main():
     body.append(f"\n数据时间：{ts}\n")
 
     body.append("## 1. 市场概览")
-    body.append(f"- 数据源：{snapshot_source}")
+    body.append(f"- 市场数据源：{snapshot_source}")
+    body.append(f"- 信号数据源：{report_source}")
     body.append(f"- 强势行业：{leaders}")
     body.append(f"- 弱势行业：{laggards}")
 
