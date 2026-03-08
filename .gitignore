@@ -1,12 +1,20 @@
-.openclaw/
+# Runtime artifacts
+/data/*.json
+/outputs/*.json
+/outputs/*.md
+/state/*.jsonl
+/state/*.log
 
-# local secrets
-*.env
-*.env.local
+# Keep essential examples/templates/state skeleton
+!/outputs/feishu_payload.sample.json
+!/state/push_job_state.json
 
-# python/node common
+# Python cache
 __pycache__/
-node_modules/
+*.pyc
+*.pyo
+*.pyd
 
-# clawhub local cache
-.clawhub/
+# Virtual envs
+.venv/
+.venv-*/
