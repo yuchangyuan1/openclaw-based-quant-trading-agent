@@ -6,10 +6,51 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 CFG = ROOT / "config"
 
+DEFAULT_RULES = {
+    "thresholds": {"buy_watch": 0.70, "hold": 0.55, "reduce": 0.40},
+    "risk_change_pct": {"low": 1.5, "medium": 3.0},
+}
+
 
 def load_json(p: Path):
     with p.open("r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def load_signal_rules(path: Path):
+    rules = {
+        "thresholds": DEFAULT_RULES["thresholds"].copy(),
+        "risk_change_pct": DEFAULT_RULES["risk_change_pct"].copy(),
+    }
+
+    if not path.exists():
+        return rules
+
+    current = None
+    with path.open("r", encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            if line == "thresholds:":
+                current = "thresholds"
+                continue
+            if line == "risk_change_pct:":
+                current = "risk_change_pct"
+                continue
+            if line.endswith(":") and not line.startswith(("buy_watch", "hold", "reduce", "low", "medium")):
+                current = None
+                continue
+
+            if current and ":" in line:
+                k, v = [x.strip() for x in line.split(":", 1)]
+                try:
+                    rules[current][k] = float(v)
+                except ValueError:
+                    pass
+
+    return rules
 
 
 def score_from_change(change_pct: float) -> float:
@@ -18,21 +59,28 @@ def score_from_change(change_pct: float) -> float:
     return round((x + 5.0) / 10.0, 4)
 
 
-def signal_from_score(score: float) -> str:
-    if score >= 0.7:
+def signal_from_score(score: float, thresholds: dict) -> str:
+    buy_watch = float(thresholds.get("buy_watch", 0.70))
+    hold = float(thresholds.get("hold", 0.55))
+    reduce = float(thresholds.get("reduce", 0.40))
+
+    if score >= buy_watch:
         return "increase"
-    if score >= 0.55:
+    if score >= hold:
         return "hold"
-    if score >= 0.4:
+    if score >= reduce:
         return "observe"
     return "reduce"
 
 
-def risk_level(change_pct: float) -> str:
+def risk_level(change_pct: float, risk_cfg: dict) -> str:
     a = abs(change_pct)
-    if a < 1.5:
+    low_cutoff = float(risk_cfg.get("low", 1.5))
+    medium_cutoff = float(risk_cfg.get("medium", 3.0))
+
+    if a < low_cutoff:
         return "low"
-    if a < 3.0:
+    if a < medium_cutoff:
         return "medium"
     return "high"
 
@@ -41,6 +89,8 @@ def main():
     snap_path = DATA / "market_snapshot.tushare.json"
     if not snap_path.exists():
         raise SystemExit("market_snapshot.tushare.json missing. run snapshot builder first")
+
+    rules = load_signal_rules(CFG / "signal_rules.yaml")
 
     snap = load_json(snap_path)
     ts = snap.get("timestamp") or datetime.now().isoformat(timespec="seconds")
@@ -52,14 +102,14 @@ def main():
         symbol = s.get("symbol")
         chg = float(s.get("change_pct", 0.0))
         sc = score_from_change(chg)
-        sig = signal_from_score(sc)
-        rl = risk_level(chg)
+        sig = signal_from_score(sc, rules["thresholds"])
+        rl = risk_level(chg, rules["risk_change_pct"])
         if rl == "high":
             high_risk_count += 1
 
         reasons = [
             f"当日涨跌幅 {chg}%",
-            "基于日频简化打分模型",
+            f"阈值规则：buy_watch={rules['thresholds'].get('buy_watch')}, hold={rules['thresholds'].get('hold')}, reduce={rules['thresholds'].get('reduce')}",
             "需结合后续财报/波动因子二次确认",
         ]
 

@@ -25,6 +25,11 @@ risk_levels:
     max_volatility: 0.45
     max_drawdown: -0.18
 
+# 用于当前简化信号模型：按“日涨跌幅绝对值”映射风险等级
+risk_change_pct:
+  low: 1.5
+  medium: 3.0
+
 signal_policy:
   require_explainability: true
   require_timestamp: true
