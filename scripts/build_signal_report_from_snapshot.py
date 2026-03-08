@@ -11,6 +11,11 @@ DEFAULT_RULES = {
     "risk_change_pct": {"low": 1.5, "medium": 3.0},
     "model_params": {"default_confidence": 0.62},
     "global_risk_thresholds": {"cautious_high_risk_count": 1, "defensive_high_risk_count": 2},
+    "reason_templates": {
+        "price_change": "当日涨跌幅 {change_pct}%",
+        "model_note": "阈值规则：buy_watch={buy_watch}, hold={hold}, reduce={reduce}",
+        "caution_note": "需结合后续财报/波动因子二次确认",
+    },
 }
 
 
@@ -25,6 +30,7 @@ def load_signal_rules(path: Path):
         "risk_change_pct": DEFAULT_RULES["risk_change_pct"].copy(),
         "model_params": DEFAULT_RULES["model_params"].copy(),
         "global_risk_thresholds": DEFAULT_RULES["global_risk_thresholds"].copy(),
+        "reason_templates": DEFAULT_RULES["reason_templates"].copy(),
     }
 
     if not path.exists():
@@ -49,16 +55,22 @@ def load_signal_rules(path: Path):
             if line == "global_risk_thresholds:":
                 current = "global_risk_thresholds"
                 continue
-            if line.endswith(":") and not line.startswith(("buy_watch", "hold", "reduce", "low", "medium", "default_confidence", "cautious_high_risk_count", "defensive_high_risk_count")):
+            if line == "reason_templates:":
+                current = "reason_templates"
+                continue
+            if line.endswith(":") and not line.startswith(("buy_watch", "hold", "reduce", "low", "medium", "default_confidence", "cautious_high_risk_count", "defensive_high_risk_count", "price_change", "model_note", "caution_note")):
                 current = None
                 continue
 
             if current and ":" in line:
                 k, v = [x.strip() for x in line.split(":", 1)]
-                try:
-                    rules[current][k] = float(v)
-                except ValueError:
-                    pass
+                if current == "reason_templates":
+                    rules[current][k] = v.strip('"').strip("'")
+                else:
+                    try:
+                        rules[current][k] = float(v)
+                    except ValueError:
+                        pass
 
     return rules
 
@@ -117,10 +129,15 @@ def main():
         if rl == "high":
             high_risk_count += 1
 
+        rt = rules["reason_templates"]
         reasons = [
-            f"当日涨跌幅 {chg}%",
-            f"阈值规则：buy_watch={rules['thresholds'].get('buy_watch')}, hold={rules['thresholds'].get('hold')}, reduce={rules['thresholds'].get('reduce')}",
-            "需结合后续财报/波动因子二次确认",
+            rt.get("price_change", "当日涨跌幅 {change_pct}%").format(change_pct=chg),
+            rt.get("model_note", "阈值规则：buy_watch={buy_watch}, hold={hold}, reduce={reduce}").format(
+                buy_watch=rules["thresholds"].get("buy_watch"),
+                hold=rules["thresholds"].get("hold"),
+                reduce=rules["thresholds"].get("reduce"),
+            ),
+            rt.get("caution_note", "需结合后续财报/波动因子二次确认"),
         ]
 
         signals.append(

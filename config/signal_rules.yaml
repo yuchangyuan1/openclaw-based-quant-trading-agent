@@ -37,6 +37,11 @@ global_risk_thresholds:
   cautious_high_risk_count: 1
   defensive_high_risk_count: 2
 
+reason_templates:
+  price_change: "当日涨跌幅 {change_pct}%"
+  model_note: "阈值规则：buy_watch={buy_watch}, hold={hold}, reduce={reduce}"
+  caution_note: "需结合后续财报/波动因子二次确认"
+
 signal_policy:
   require_explainability: true
   require_timestamp: true
