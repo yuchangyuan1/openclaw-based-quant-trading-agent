@@ -6,6 +6,14 @@ portfolio_constraints:
   max_sector_exposure: 0.35
   max_portfolio_drawdown: -0.08
 
+indexes:
+  - code: 000001.SH
+    name: 上证指数
+  - code: 399001.SZ
+    name: 深证成指
+  - code: 399006.SZ
+    name: 创业板指
+
 watchlist:
   - symbol: SH.600519
     name: 贵州茅台

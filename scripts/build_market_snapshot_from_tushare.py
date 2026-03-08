@@ -7,7 +7,7 @@ import tushare as ts
 ROOT = Path(__file__).resolve().parents[1]
 CFG = ROOT / "config" / "portfolio.yaml"
 
-INDEXES = {
+DEFAULT_INDEXES = {
     "000001.SH": "上证指数",
     "399001.SZ": "深证成指",
     "399006.SZ": "创业板指",
@@ -28,11 +28,14 @@ def normalize_symbol(symbol: str) -> str:
 def load_portfolio_config(path: Path):
     market = "CN-A"
     watchlist = []
+    indexes = {}
 
     if not path.exists():
-        return market, watchlist
+        return market, watchlist, indexes
 
-    in_watchlist = False
+    section = None
+    pending_index_code = None
+
     for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
         if not line or line.startswith("#"):
@@ -43,19 +46,32 @@ def load_portfolio_config(path: Path):
             continue
 
         if line == "watchlist:":
-            in_watchlist = True
+            section = "watchlist"
             continue
 
-        if in_watchlist:
+        if line == "indexes:":
+            section = "indexes"
+            continue
+
+        if section == "watchlist":
             if line.startswith("- symbol:"):
                 sym = line.split(":", 1)[1].strip()
                 if sym:
                     watchlist.append(normalize_symbol(sym))
             elif not line.startswith("name:") and not line.startswith("-"):
-                # leaving watchlist block
-                in_watchlist = False
+                section = None
 
-    return market, watchlist
+        elif section == "indexes":
+            if line.startswith("- code:"):
+                pending_index_code = line.split(":", 1)[1].strip().upper()
+                indexes[pending_index_code] = pending_index_code
+            elif line.startswith("name:") and pending_index_code:
+                indexes[pending_index_code] = line.split(":", 1)[1].strip() or pending_index_code
+            elif not line.startswith("-") and not line.startswith("name:"):
+                section = None
+                pending_index_code = None
+
+    return market, watchlist, indexes
 
 
 def main():
@@ -63,9 +79,11 @@ def main():
     if not token:
         raise SystemExit("TUSHARE_TOKEN missing")
 
-    market, watchlist = load_portfolio_config(CFG)
+    market, watchlist, indexes = load_portfolio_config(CFG)
     if not watchlist:
         watchlist = ["600519.SH", "000858.SZ", "600036.SH", "300750.SZ", "601318.SH"]
+    if not indexes:
+        indexes = DEFAULT_INDEXES.copy()
 
     pro = ts.pro_api(token)
     out = {
@@ -76,7 +94,7 @@ def main():
         "news": [],
     }
 
-    for code, name in INDEXES.items():
+    for code, name in indexes.items():
         try:
             df = pro.index_daily(ts_code=code, start_date="20260301", end_date="20260331")
             if len(df) >= 1:
