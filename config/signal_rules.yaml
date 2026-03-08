@@ -30,6 +30,13 @@ risk_change_pct:
   low: 1.5
   medium: 3.0
 
+model_params:
+  default_confidence: 0.62
+
+global_risk_thresholds:
+  cautious_high_risk_count: 1
+  defensive_high_risk_count: 2
+
 signal_policy:
   require_explainability: true
   require_timestamp: true

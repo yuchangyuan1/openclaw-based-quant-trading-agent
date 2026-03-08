@@ -9,6 +9,8 @@ CFG = ROOT / "config"
 DEFAULT_RULES = {
     "thresholds": {"buy_watch": 0.70, "hold": 0.55, "reduce": 0.40},
     "risk_change_pct": {"low": 1.5, "medium": 3.0},
+    "model_params": {"default_confidence": 0.62},
+    "global_risk_thresholds": {"cautious_high_risk_count": 1, "defensive_high_risk_count": 2},
 }
 
 
@@ -21,6 +23,8 @@ def load_signal_rules(path: Path):
     rules = {
         "thresholds": DEFAULT_RULES["thresholds"].copy(),
         "risk_change_pct": DEFAULT_RULES["risk_change_pct"].copy(),
+        "model_params": DEFAULT_RULES["model_params"].copy(),
+        "global_risk_thresholds": DEFAULT_RULES["global_risk_thresholds"].copy(),
     }
 
     if not path.exists():
@@ -39,7 +43,13 @@ def load_signal_rules(path: Path):
             if line == "risk_change_pct:":
                 current = "risk_change_pct"
                 continue
-            if line.endswith(":") and not line.startswith(("buy_watch", "hold", "reduce", "low", "medium")):
+            if line == "model_params:":
+                current = "model_params"
+                continue
+            if line == "global_risk_thresholds:":
+                current = "global_risk_thresholds"
+                continue
+            if line.endswith(":") and not line.startswith(("buy_watch", "hold", "reduce", "low", "medium", "default_confidence", "cautious_high_risk_count", "defensive_high_risk_count")):
                 current = None
                 continue
 
@@ -118,17 +128,21 @@ def main():
                 "symbol": symbol,
                 "signal": sig,
                 "score": sc,
-                "confidence": 0.62,
+                "confidence": float(rules["model_params"].get("default_confidence", 0.62)),
                 "risk_level": rl,
                 "reasons": reasons,
                 "delta_vs_last": "首次自动生成，后续将对比历史建议",
             }
         )
 
+    gr = rules["global_risk_thresholds"]
+    defensive_n = int(gr.get("defensive_high_risk_count", 2))
+    cautious_n = int(gr.get("cautious_high_risk_count", 1))
+
     global_risk_state = "normal"
-    if high_risk_count >= 2:
+    if high_risk_count >= defensive_n:
         global_risk_state = "defensive"
-    elif high_risk_count >= 1:
+    elif high_risk_count >= cautious_n:
         global_risk_state = "cautious"
 
     out = {
