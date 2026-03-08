@@ -1,0 +1,8 @@
+{
+  "title": "低频量化日报（Dry Run）",
+  "summary": "市场整体分化，组合风险状态 cautious，建议以风控优先。",
+  "body_markdown_path": "outputs/daily_report.generated.md",
+  "risk_level": "warning",
+  "send": false,
+  "note": "Dry run only. Set send=true when integrated with Feishu push skill."
+}

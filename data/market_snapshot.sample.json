@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-03-07T15:30:00+08:00",
+  "market": "CN-A",
+  "index": {
+    "SH000001": { "name": "上证指数", "change_pct": 0.42 },
+    "SZ399001": { "name": "深证成指", "change_pct": 0.35 },
+    "SZ399006": { "name": "创业板指", "change_pct": -0.18 }
+  },
+  "sector": {
+    "leaders": ["银行", "煤炭", "公用事业"],
+    "laggards": ["半导体", "新能源设备", "医药" ]
+  },
+  "symbols": [
+    {"symbol":"SH.600519","close":1678.2,"change_pct":0.6,"volume_ratio":0.92},
+    {"symbol":"SZ.000858","close":129.6,"change_pct":0.2,"volume_ratio":0.88},
+    {"symbol":"SH.600036","close":36.1,"change_pct":1.1,"volume_ratio":1.15},
+    {"symbol":"SZ.300750","close":185.0,"change_pct":-1.3,"volume_ratio":1.42},
+    {"symbol":"SH.601318","close":42.6,"change_pct":0.4,"volume_ratio":0.97}
+  ],
+  "news": [
+    {"symbol":"SZ.300750","level":"warning","title":"行业补贴政策不及预期"},
+    {"symbol":"SH.600036","level":"info","title":"银行板块成交活跃度提升"}
+  ]
+}

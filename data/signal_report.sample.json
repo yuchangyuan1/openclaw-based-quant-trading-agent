@@ -1,0 +1,34 @@
+{
+  "timestamp": "2026-03-07T15:35:00+08:00",
+  "market": "CN-A",
+  "global_risk_state": "cautious",
+  "signals": [
+    {
+      "symbol": "SH.600519",
+      "signal": "hold",
+      "score": 0.64,
+      "confidence": 0.73,
+      "risk_level": "low",
+      "reasons": ["趋势保持上行", "波动率可控", "成交未显著放大"],
+      "delta_vs_last": "维持持有，信号无显著变化"
+    },
+    {
+      "symbol": "SH.600036",
+      "signal": "increase",
+      "score": 0.74,
+      "confidence": 0.70,
+      "risk_level": "medium",
+      "reasons": ["趋势与动量共振", "估值相对合理", "行业风险可控"],
+      "delta_vs_last": "由观察上调至增持"
+    },
+    {
+      "symbol": "SZ.300750",
+      "signal": "reduce",
+      "score": 0.38,
+      "confidence": 0.77,
+      "risk_level": "high",
+      "reasons": ["短期回撤扩大", "波动率抬升", "公告情绪偏负面"],
+      "delta_vs_last": "由持有下调至减仓"
+    }
+  ]
+}
