@@ -41,6 +41,14 @@ def main():
         a = r.get("action", "unknown")
         by_signal[a]["count"] += 1
 
+    backtest = {}
+    backtest_path = OUT / "backtest_baseline_report.json"
+    if backtest_path.exists():
+        try:
+            backtest = json.loads(backtest_path.read_text(encoding="utf-8"))
+        except Exception:
+            backtest = {}
+
     report = {
         "week": week,
         "summary": {
@@ -58,6 +66,12 @@ def main():
         "calibration_hint": {
             "increase": -0.03 if proxy_win_rate < 0.5 else 0.0,
             "reduce": 0.02 if proxy_win_rate < 0.5 else 0.0,
+        },
+        "backtest_baseline": {
+            "available": bool(backtest),
+            "strategy": (backtest.get("strategy") or {}).get("name"),
+            "period": backtest.get("period", {}),
+            "summary": backtest.get("summary", {}),
         },
     }
 

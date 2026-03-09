@@ -16,6 +16,7 @@
 - ✅ 24h 建议去重 + 建议变更追踪
 - ✅ 日报/周报产出
 - ✅ OpenClaw Feishu 通道推送（App ID/App Secret，默认卡片）
+- ✅ 财务数据源探针（fundamental_probe，可用性/时延报告）
 
 ---
 
@@ -71,9 +72,36 @@ powershell -ExecutionPolicy Bypass -File scripts\run_daily_pipeline.ps1
 .\.venv-tushare\Scripts\python scripts\evaluate_signal_quality.py
 ```
 
+### 周流水线（一键）
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run_weekly_pipeline.ps1
+```
+
+### 基线回测（MA 交叉）
+```powershell
+.\.venv-tushare\Scripts\python scripts\backtest_ma_baseline.py
+```
+输出：`outputs/backtest_baseline_report.json`
+
+### 建议解释查询（交互入口）
+```powershell
+.\.venv-tushare\Scripts\python scripts\explain_advice.py --symbol 600519.SH
+```
+不带 `--symbol` 时输出全部当前建议解释。
+
 ### 漏跑补偿检查
 ```powershell
 .\.venv-tushare\Scripts\python scripts\missed_run_recovery.py
+```
+
+### 财务数据源探针
+```powershell
+.\.venv-tushare\Scripts\python scripts\fundamental_probe.py
+```
+
+### 连续异常告警检查（N=3）
+```powershell
+.\.venv-tushare\Scripts\python scripts\check_fundamental_alert.py
 ```
 
 ---

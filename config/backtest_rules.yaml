@@ -1,0 +1,10 @@
+# 简化回测参数（基线）
+benchmark: 000300.SH
+start_date: 20230101
+end_date: 20261231
+initial_cash: 1000000
+fee_rate: 0.001
+
+# MA 交叉基线策略（可借鉴 Building-A-Trading-Strategy-With-Python 的思路）
+ma_short: 20
+ma_long: 60
