@@ -109,6 +109,33 @@ def risk_level_from_vol_change(change_pct: float, volatility20: float, risk_cfg:
     return "low"
 
 
+def confidence_adjust(base: float, quality_score: float, val_source: str, earn_source: str, val: dict, earn: dict) -> float:
+    c = base
+    # data quality gate impact
+    if quality_score < 60:
+        c -= 0.10
+
+    # source fallback impact
+    if val_source == "akshare" or earn_source == "akshare":
+        c -= 0.05
+
+    # missing fundamentals impact
+    missing_count = 0
+    if val.get("pe") is None:
+        missing_count += 1
+    if val.get("pb") is None:
+        missing_count += 1
+    if earn.get("roe") is None:
+        missing_count += 1
+    if earn.get("grossprofit_margin") is None:
+        missing_count += 1
+    if earn.get("debt_to_assets") is None:
+        missing_count += 1
+
+    c -= min(0.15, missing_count * 0.02)
+    return round(clamp01(c), 3)
+
+
 def main():
     snap_path = DATA / "market_snapshot.tushare.json"
     if not snap_path.exists():
@@ -139,6 +166,8 @@ def main():
 
         valuation = score_valuation(val.get("pe"), val.get("pb"))
         earnings_quality = score_earnings(earn.get("roe"), earn.get("grossprofit_margin"), earn.get("debt_to_assets"))
+        val_source = val.get("source", "none")
+        earn_source = earn.get("source", "none")
 
         score = (
             w.get("trend", 0.25) * trend
@@ -172,9 +201,10 @@ def main():
                 "symbol": symbol,
                 "signal": signal,
                 "score": score,
-                "confidence": float(rules["model_params"].get("default_confidence", 0.62)),
+                "confidence": confidence_adjust(float(rules["model_params"].get("default_confidence", 0.62)), quality_score, val_source, earn_source, val, earn),
                 "risk_level": risk_level,
                 "reasons": reasons,
+                "factor_source": {"valuation": val_source, "earnings": earn_source},
                 "delta_vs_last": "待与 advice_history 对比",
                 "evidence": {
                     "trend": round(trend, 3),

@@ -16,12 +16,14 @@ def load_json(path: Path, default=None):
 
 
 def line_for_signal(item):
+    fs = item.get('factor_source', {}) or {}
     return (
         f"- {item['symbol']}：**{item['signal']}** | 分数 {item['score']:.2f} | "
         f"置信度 {item['confidence']:.2f} | 风险 {item['risk_level']}\n"
         f"  - 理由：{'；'.join(item.get('reasons', []))}\n"
         f"  - 变化：{item.get('change_vs_last', item.get('delta_vs_last', '无'))}\n"
-        f"  - 数据质量：{item.get('data_quality_gate', {}).get('quality_score', 'NA')}"
+        f"  - 数据质量：{item.get('data_quality_gate', {}).get('quality_score', 'NA')}\n"
+        f"  - 财务来源：valuation={fs.get('valuation', 'unknown')}, earnings={fs.get('earnings', 'unknown')}"
     )
 
 
@@ -53,6 +55,16 @@ def main():
     body.append(f"- 弱势行业：{laggards}")
     body.append(f"- 数据新鲜度(秒)：{snapshot.get('data_freshness_sec', 'NA')}")
     body.append(f"- 数据质量分：{snapshot.get('snapshot_quality_score', 'NA')}")
+
+    symbols = snapshot.get('symbols', []) or []
+    total = len(symbols)
+    val_ok = sum(1 for x in symbols if (x.get('valuation', {}) or {}).get('source') in ('tushare', 'akshare'))
+    earn_ok = sum(1 for x in symbols if (x.get('earnings', {}) or {}).get('source') in ('tushare', 'akshare'))
+    fallback_cnt = sum(1 for x in symbols if (x.get('valuation', {}) or {}).get('source') == 'akshare' or (x.get('earnings', {}) or {}).get('source') == 'akshare')
+    if total > 0:
+        body.append(f"- 财务因子可用率：valuation {val_ok}/{total}，earnings {earn_ok}/{total}")
+        body.append(f"- 财务回退占比（Akshare）：{fallback_cnt}/{total}")
+
     sh = snapshot.get('source_health', {}) or {}
     body.append("- 数据源健康：")
     body.append(f"  - quote: {sh.get('quote', 'unknown')}")
