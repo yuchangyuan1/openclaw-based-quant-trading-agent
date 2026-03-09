@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 import tushare as ts
+import akshare as ak
 
 ROOT = Path(__file__).resolve().parents[1]
 CFG = ROOT / "config" / "portfolio.yaml"
@@ -120,35 +121,70 @@ def build_factor_inputs(df):
     }
 
 
+def to_ak_symbol(ts_code: str):
+    code, ex = ts_code.split('.')
+    return f"{ex}{code}" if ex in ("SH", "SZ") else ts_code
+
+
 def fetch_valuation(pro, ts_code: str):
+    # 1) tushare first
     try:
         df = pro.daily_basic(ts_code=ts_code, start_date="20260101", end_date="20261231", fields="ts_code,trade_date,pe,pb")
         if len(df) >= 1:
             latest = df.iloc[0]
-            return {
-                "trade_date": str(latest.get("trade_date", "")),
-                "pe": float(latest.get("pe")) if latest.get("pe") is not None else None,
-                "pb": float(latest.get("pb")) if latest.get("pb") is not None else None,
-            }
+            pe = float(latest.get("pe")) if latest.get("pe") is not None else None
+            pb = float(latest.get("pb")) if latest.get("pb") is not None else None
+            if pe is not None or pb is not None:
+                return {"trade_date": str(latest.get("trade_date", "")), "pe": pe, "pb": pb, "source": "tushare"}
     except Exception:
         pass
-    return {"trade_date": None, "pe": None, "pb": None}
+
+    # 2) akshare fallback
+    try:
+        ak_df = ak.stock_zh_valuation_comparison_em(symbol=to_ak_symbol(ts_code))
+        if len(ak_df) >= 1 and len(ak_df.columns) >= 10:
+            row = ak_df.iloc[0]
+            # empirical positions: col[4]=PE(TTM), col[9]=PB(TTM)
+            pe = row.iloc[4]
+            pb = row.iloc[9]
+            pe = float(pe) if pe is not None and str(pe) not in ("nan", "None") else None
+            pb = float(pb) if pb is not None and str(pb) not in ("nan", "None") else None
+            if pe is not None or pb is not None:
+                return {"trade_date": None, "pe": pe, "pb": pb, "source": "akshare"}
+    except Exception:
+        pass
+
+    return {"trade_date": None, "pe": None, "pb": None, "source": "none"}
 
 
 def fetch_earnings_quality(pro, ts_code: str):
+    # 1) tushare first
     try:
         df = pro.fina_indicator(ts_code=ts_code, start_date="20240101", end_date="20261231", fields="ts_code,end_date,roe,grossprofit_margin,debt_to_assets")
         if len(df) >= 1:
             latest = df.iloc[0]
-            return {
-                "end_date": str(latest.get("end_date", "")),
-                "roe": float(latest.get("roe")) if latest.get("roe") is not None else None,
-                "grossprofit_margin": float(latest.get("grossprofit_margin")) if latest.get("grossprofit_margin") is not None else None,
-                "debt_to_assets": float(latest.get("debt_to_assets")) if latest.get("debt_to_assets") is not None else None,
-            }
+            roe = float(latest.get("roe")) if latest.get("roe") is not None else None
+            gpm = float(latest.get("grossprofit_margin")) if latest.get("grossprofit_margin") is not None else None
+            d2a = float(latest.get("debt_to_assets")) if latest.get("debt_to_assets") is not None else None
+            if roe is not None or gpm is not None or d2a is not None:
+                return {"end_date": str(latest.get("end_date", "")), "roe": roe, "grossprofit_margin": gpm, "debt_to_assets": d2a, "source": "tushare"}
     except Exception:
         pass
-    return {"end_date": None, "roe": None, "grossprofit_margin": None, "debt_to_assets": None}
+
+    # 2) akshare fallback (ROE mainly)
+    try:
+        ak_df = ak.stock_financial_analysis_indicator_em(symbol=ts_code)
+        if len(ak_df) >= 1:
+            row = ak_df.iloc[0]
+            roe = row.get("ROEJQ")
+            roe = float(roe) if roe is not None and str(roe) not in ("nan", "None") else None
+            # gross margin / debt ratio not stable in this endpoint => keep None
+            if roe is not None:
+                return {"end_date": str(row.get("REPORT_DATE", "")), "roe": roe, "grossprofit_margin": None, "debt_to_assets": None, "source": "akshare"}
+    except Exception:
+        pass
+
+    return {"end_date": None, "roe": None, "grossprofit_margin": None, "debt_to_assets": None, "source": "none"}
 
 
 def main():
