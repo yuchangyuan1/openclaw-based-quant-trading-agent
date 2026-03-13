@@ -1,4 +1,4 @@
-# OpenClaw 低频量化交易咨询 Agent（A 股）
+# OpenClaw 低频量化交易咨询 Agent
 
 本项目基于 OpenClaw，实现 A 股低频量化投研流水线：
 **数据抓取 → 多因子打分 → 风控约束 → 建议生成 → 飞书推送（卡片）**。
@@ -56,7 +56,7 @@ docs/        # 实施文档与执行说明
 setx TUSHARE_TOKEN "你的token"
 ```
 
-飞书推送不需要 webhook，使用 OpenClaw 已连接的 Feishu 应用（App ID/App Secret）。
+飞书推送使用 OpenClaw 已连接的 Feishu 应用（App ID/App Secret）。
 
 ---
 
@@ -129,21 +129,3 @@ powershell -ExecutionPolicy Bypass -File scripts\run_weekly_pipeline.ps1
 
 ---
 
-## 8. 版本控制策略
-
-`.gitignore` 默认忽略运行时数据与产物，仅保留必要状态骨架文件。
-
----
-
-## 9. 后续路线图
-
-- [ ] 云端常驻部署（cron/systemd）
-- [ ] 周报自动推送串联
-- [ ] 多源财务数据回退（Tushare→Akshare）
-- [ ] 置信度校准与策略回测闭环
-
----
-
-## 10. 免责声明
-
-仅用于投研与辅助决策，不构成投资建议。投资有风险，决策需谨慎。
