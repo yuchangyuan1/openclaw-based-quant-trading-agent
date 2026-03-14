@@ -139,7 +139,9 @@ def confidence_adjust(base: float, quality_score: float, val_source: str, earn_s
 def main():
     snap_path = DATA / "market_snapshot.tushare.json"
     if not snap_path.exists():
-        raise SystemExit("market_snapshot.tushare.json missing. run snapshot builder first")
+        snap_path = DATA / "market_snapshot.json"
+    if not snap_path.exists():
+        raise SystemExit("market_snapshot.(tushare.)json missing. run snapshot builder first")
 
     rules = load_signal_rules(CFG / "signal_rules.yaml")
     snap = load_json(snap_path)
@@ -233,9 +235,13 @@ def main():
         "signals": signals,
     }
 
-    out_path = DATA / "signal_report.generated.json"
-    out_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"generated: {out_path}")
+    payload = json.dumps(out, ensure_ascii=False, indent=2)
+    out_generated = DATA / "signal_report.generated.json"
+    out_canonical = DATA / "signal_report.json"
+    out_generated.write_text(payload, encoding="utf-8")
+    out_canonical.write_text(payload, encoding="utf-8")
+    print(f"generated: {out_generated}")
+    print(f"generated: {out_canonical}")
 
 
 if __name__ == "__main__":

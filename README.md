@@ -22,7 +22,10 @@
 
 ## 2. 主流水线（交易日 15:30）
 
-`run_daily_pipeline.ps1`：
+Windows：`run_daily_pipeline.ps1`  
+Linux：`run_daily_pipeline.sh`
+
+核心步骤：
 
 1. `build_market_snapshot_from_tushare.py`
 2. `build_signal_report_from_snapshot.py`
@@ -67,6 +70,10 @@ setx TUSHARE_TOKEN "你的token"
 powershell -ExecutionPolicy Bypass -File scripts\run_daily_pipeline.ps1
 ```
 
+```bash
+bash run_daily_pipeline.sh
+```
+
 ### 周度评估
 ```powershell
 .\.venv-tushare\Scripts\python scripts\evaluate_signal_quality.py
@@ -108,9 +115,9 @@ powershell -ExecutionPolicy Bypass -File scripts\run_weekly_pipeline.ps1
 
 ## 6. 关键输出
 
-- `data/market_snapshot.tushare.json`
-- `data/signal_report.generated.json`
-- `outputs/portfolio_risk_report.json`
+- `data/market_snapshot.tushare.json`（兼容输出：`data/market_snapshot.json`）
+- `data/signal_report.generated.json`（兼容输出：`data/signal_report.json`）
+- `outputs/portfolio_risk_report.json`（兼容输出：`data/portfolio_risk_report.json`）
 - `outputs/advice_actions.json`
 - `outputs/daily_report.generated.md`
 - `outputs/feishu_card_payload.generated.json`

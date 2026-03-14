@@ -8,6 +8,7 @@ import akshare as ak
 ROOT = Path(__file__).resolve().parents[1]
 CFG = ROOT / "config" / "portfolio.yaml"
 OUT = ROOT / "data" / "market_snapshot.tushare.json"
+OUT_CANONICAL = ROOT / "data" / "market_snapshot.json"
 
 DEFAULT_INDEXES = {
     "000001.SH": "上证指数",
@@ -280,8 +281,11 @@ def main():
 
     out["data_freshness_sec"] = int((datetime.now(timezone.utc) - now.astimezone(timezone.utc)).total_seconds())
 
-    OUT.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    payload = json.dumps(out, ensure_ascii=False, indent=2)
+    OUT.write_text(payload, encoding="utf-8")
+    OUT_CANONICAL.write_text(payload, encoding="utf-8")
     print(f"generated: {OUT}")
+    print(f"generated: {OUT_CANONICAL}")
 
 
 if __name__ == "__main__":

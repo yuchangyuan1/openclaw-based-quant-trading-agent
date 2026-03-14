@@ -51,7 +51,9 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     signal_path = DATA / "signal_report.generated.json"
     if not signal_path.exists():
-        raise SystemExit("signal_report.generated.json missing")
+        signal_path = DATA / "signal_report.json"
+    if not signal_path.exists():
+        raise SystemExit("signal_report(.generated).json missing")
 
     report = load_json(signal_path)
     constraints = parse_portfolio_constraints(CFG)
@@ -89,9 +91,13 @@ def main():
         "risk_state": risk_state,
     }
 
+    payload = json.dumps(out, ensure_ascii=False, indent=2)
     out_path = OUT / "portfolio_risk_report.json"
-    out_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    out_data_path = DATA / "portfolio_risk_report.json"
+    out_path.write_text(payload, encoding="utf-8")
+    out_data_path.write_text(payload, encoding="utf-8")
     print(f"generated: {out_path}")
+    print(f"generated: {out_data_path}")
 
 
 if __name__ == "__main__":
